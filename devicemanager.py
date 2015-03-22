@@ -78,10 +78,10 @@ class ServerThread(threading.Thread):
         self.oscServer.serve_forever()
         print '---------OSC server is running on ',ip+port,'------------'
 
-class OSC(object):
+class OSCServer(object):
     """docstring for OSCServer"""
     def __init__(self, port,name='span'):
-        super(OSC, self).__init__()
+        super(OSCServer, self).__init__()
         self.port = port
         # Set up threads.
         self.threadLock = threading.Lock()
