@@ -1,96 +1,14 @@
-from thread import allocate_lock
+#! /usr/bin/env python
+# -*- coding: utf-8 -*-
 import threading
 import socket
 import select
 from OSC import ThreadingOSCServer, OSCClient , OSCMessage
-import pybonjour
-import serial
-import sys
+#import pybonjour
+client = OSCClient()
 
-
-debug = True
-
-class Serial(object):
-    def __init__(self):
-        self.mutex = allocate_lock()
-        self.port=None
-
-    def listports(self):
-        """ Lists serial port names
-
-            :raises EnvironmentError:
-                On unsupported or unknown platforms
-            :returns:
-                A list of the serial ports available on the system
-        """
-        if sys.platform.startswith('win'):
-            ports = ['COM%s' % (i + 1) for i in range(256)]
-        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
-            # this excludes your current terminal "/dev/tty"
-            ports = glob.glob('/dev/tty[A-Za-z]*')
-        elif sys.platform.startswith('darwin'):
-            ports = glob.glob('/dev/tty.*')
-        else:
-            raise EnvironmentError('Unsupported platform')
-
-        result = []
-        for port in ports:
-            try:
-                s = serial.Serial(port)
-                s.close()
-                result.append(port)
-            except (OSError, serial.SerialException):
-                pass
-        return result
-
-    def open(self,portname):
-        self.mutex.acquire()
-        self.portname=portname
-        if (self.port == None):
-            try:
-                self.port = serial.Serial(self.portname,9600,timeout=2,stopbits=1,bytesize=8,rtscts=False, dsrdtr=False)
-                self.port.flushInput()
-            except Exception as e:
-                pass
-                #raise e
-                self.port = None
-        self.mutex.release()    
-
-    def recv_packet(self,extra_title=None):
-        if self.port:
-            # read up to 16 bytes until 0xff
-            packet=''
-            count=0
-            while count<16:
-                s=self.port.read(1)
-                if s:
-                    byte = ord(s)
-                    count+=1
-                    packet=packet+chr(byte)
-                else:
-                    print "ERROR: Timeout waiting for reply"
-                    break
-                if byte==0xff:
-                    break
-            return packet
-        print 'no reply from serial because there is no connexion'
-
-    def _write_packet(self,packet):
-        if self.port:
-            if not self.port.isOpen():
-                pass
-                #sys.exit(1)
-
-            # lets see if a completion message or someting
-            # else waits in the buffer. If yes dump it.
-            if self.port.inWaiting():
-                self.recv_packet("ignored")
-
-            self.port.write(packet)
-            #self.dump(packet,"sent")
-        else:
-            print("message hasn't be send because no serial port is open")
-
+def run(port=22222):
+    OSCServer(port)
 
 class ServerThread(threading.Thread):
     """The thread that will run the server process."""
@@ -100,39 +18,40 @@ class ServerThread(threading.Thread):
         self.port = port
         self.daemon = True
         self.oscServer = ThreadingOSCServer((ip, port))
-
+        self.oscServer.addMsgHandler('default', self.defaultMessageHandler)
     def run(self):
         """ The actual worker part of the thread. """
         self.oscServer.serve_forever()
-        print '---------OSC server is running on ',ip+port,'------------'
+    def defaultMessageHandler(self, addr, tags, data, client_address):
+        """ Default handler for the OSCServer. """
+        print ("OSC DEFAULT INPUT" , addr, tags, data, client_address)
+        if addr.startswith('/project'):
+            print (addr , tags , data ,client_address)
 
 class OSCServer(object):
     """docstring for OSCServer"""
-    def __init__(self, port,name='span'):
+    def __init__(self, port):
         super(OSCServer, self).__init__()
         self.port = port
         # Set up threads.
         self.threadLock = threading.Lock()
         self.serverThread = None
-        client = OSCClient()
 
         # Start the server.
         self.__startServer__()
         info = self.serverThread.oscServer.address()
         print('OSC Server started on %s:%i' % (info[0], info[1]))
-        self.zeroconf(name)
+        #self.zeroconf()
+    
     
     def register_callback(self,sdRef, flags, errorCode, name, regtype, domain):
         if errorCode == pybonjour.kDNSServiceErr_NoError:
-            print '-----------------------------------'
-            print 'registered zeroconf service : ' , name
-            print  'regtype', regtype
-            print 'domain' , domain
+            print ('Registered zeroconf service' , name , regtype , domain)
 
-    def zeroconf(self,name):
+    def zeroconf(self):
         hostname = socket.gethostname()
         hostname = hostname.split('.local')[0]
-        name = name + ' on ' + hostname 
+        name = hostname + 'lekture'
         regtype = '_osc._udp'
         sdRef = pybonjour.DNSServiceRegister(name = name,
                                          regtype = regtype,
