@@ -30,7 +30,7 @@ class ServerThread(threading.Thread):
 
 class OSCServer(object):
     """docstring for OSCServer"""
-    def __init__(self, port):
+    def __init__(self, port,name='no-name'):
         super(OSCServer, self).__init__()
         self.port = port
         # Set up threads.
