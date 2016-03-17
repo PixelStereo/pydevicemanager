@@ -7,38 +7,57 @@ from OSC import ThreadingOSCServer, OSCClient , OSCMessage
 #import pybonjour
 client = OSCClient()
 
-def run(port=22222):
-    OSCServer(port)
+debug = True
+
+def run(parent, port=22222):
+    OSCServer(parent, port)
+
 
 class ServerThread(threading.Thread):
     """The thread that will run the server process."""
-    def __init__(self, ip, port):
+    def __init__(self, parent, ip, port):
         super(ServerThread, self).__init__()
+        self.parent = parent
         self.ip = ip
         self.port = port
         self.daemon = True
         self.oscServer = ThreadingOSCServer((ip, port))
         self.oscServer.addMsgHandler('default', self.defaultMessageHandler)
+
     def run(self):
         """ The actual worker part of the thread. """
         self.oscServer.serve_forever()
+
     def defaultMessageHandler(self, addr, tags, data, client_address):
         """ Default handler for the OSCServer. """
-        print ("OSC DEFAULT INPUT" , addr, tags, data, client_address)
-        if addr.startswith('/project'):
-            print (addr , tags , data ,client_address)
+        if debug:
+            dbg = 'receveived : /{addr} {data} (type={tags}) from {client_address}'
+            print(dbg.format(addr=addr, data=data, tags=tags, client_address=client_address))
+        addr = addr.split('/')
+        new = ''
+        for item in addr:
+            if new != '':
+                new = new + '_' + item
+            else:
+                new = item 
+        if len(data) == 1:
+            data = data[0]
+        print data, new
+        print setattr(self.parent, new, data)
+
 
 class OSCServer(object):
     """docstring for OSCServer"""
-    def __init__(self, port,name='no-name'):
+    def __init__(self, parent, port, name='no-name'):
         super(OSCServer, self).__init__()
+        self.parent = parent
         self.port = port
         # Set up threads.
         self.threadLock = threading.Lock()
         self.serverThread = None
 
         # Start the server.
-        self.__startServer__()
+        self.__startServer__(parent)
         info = self.serverThread.oscServer.address()
         print('OSC Server started on %s:%i' % (info[0], info[1]))
         #self.zeroconf()
@@ -79,15 +98,14 @@ class OSCServer(object):
         else:
             return 10000
 
-    def __startServer__(self):
+    def __startServer__(self, parent):
         #Start the server.
         # Check to see if there is already a thread and server running:
         if self.serverThread:
             if not self.serverThread.is_alive():
-                self.serverThread = ServerThread(self.getDefaultIPAddress(),
-                    self.getDefaultPort())
+                self.serverThread = ServerThread(self.parent, self.getDefaultIPAddress(), self.getDefaultPort())
         else:
-            self.serverThread = ServerThread(self.getDefaultIPAddress(),self.getDefaultPort())
+            self.serverThread = ServerThread(self.parent, self.getDefaultIPAddress(),self.getDefaultPort())
         self.serverThread.start()
 
     def __stopServer__(self):
