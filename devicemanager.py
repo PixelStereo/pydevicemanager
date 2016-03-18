@@ -23,7 +23,10 @@ class ServerThread(threading.Thread):
         self.daemon = True
         self.oscServer = ThreadingOSCServer((ip, port))
         self.oscServer.addMsgHandler('default', self.defaultMessageHandler)
-        print 'xxxxXXXXXXxxxxxx', parent.__class__.__name__
+        if debug:
+            self.the_class = parent.__class__.__name__
+            print('xxxxXXXXXXxxxxxx', self.the_class)
+            print dir(self.the_class)
 
     def run(self):
         """ The actual worker part of the thread. """
@@ -43,8 +46,16 @@ class ServerThread(threading.Thread):
                 new = item 
         if len(data) == 1:
             data = data[0]
-        print data, new
-        setattr(self.parent, new, data)
+        prop_list=[p for p in dir(self.the_class) if isinstance(getattr(self.the_class, p),property)]
+        print new, prop_list
+        if new in prop_list:
+            print 'propery'
+            setattr(self.parent, new)
+        else:
+            print 'method'
+            meth = getattr(self.parent, new)
+            print meth, data
+            meth(data)
 
 
 class OSCServer(object):
@@ -88,7 +99,7 @@ class OSCServer(object):
             ipAddress = socket.gethostbyname(socket.gethostname())
         except :
             ipAddress = '127.0.0.1'
-        print 'FORCE TO 127.0.0.2 because BUG'
+        print('FORCE TO 127.0.0.2 because BUG')
         ipAddress = '127.0.0.1'
         return ipAddress
 
