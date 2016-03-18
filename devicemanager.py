@@ -23,6 +23,7 @@ class ServerThread(threading.Thread):
         self.daemon = True
         self.oscServer = ThreadingOSCServer((ip, port))
         self.oscServer.addMsgHandler('default', self.defaultMessageHandler)
+        print 'xxxxXXXXXXxxxxxx', parent.__class__.__name__
 
     def run(self):
         """ The actual worker part of the thread. """
@@ -31,7 +32,7 @@ class ServerThread(threading.Thread):
     def defaultMessageHandler(self, addr, tags, data, client_address):
         """ Default handler for the OSCServer. """
         if debug:
-            dbg = 'receveived : /{addr} {data} (type={tags}) from {client_address}'
+            dbg = 'receveived : {addr} {data} (type={tags}) from {client_address}'
             print(dbg.format(addr=addr, data=data, tags=tags, client_address=client_address))
         addr = addr.split('/')
         new = ''
@@ -43,7 +44,7 @@ class ServerThread(threading.Thread):
         if len(data) == 1:
             data = data[0]
         print data, new
-        print setattr(self.parent, new, data)
+        setattr(self.parent, new, data)
 
 
 class OSCServer(object):
