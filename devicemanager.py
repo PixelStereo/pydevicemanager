@@ -23,17 +23,25 @@ class ServerThread(threading.Thread):
         self.daemon = True
         self.oscServer = ThreadingOSCServer((ip, port))
         self.oscServer.addMsgHandler('default', self.defaultMessageHandler)
+        prop_list = [p for p in dir(parent.__class__) if isinstance(getattr(parent.__class__, p),property)]
         if debug:
-            self.the_class = parent.__class__.__name__
-            print('xxxxXXXXXXxxxxxx', self.the_class)
-            print dir(self.the_class)
+            for prop in prop_list:
+                prop = prop.split('_')
+                new = ''
+                for item in prop:
+                    new = new + '/'  + item
+                    prop = new
+                print('register osc address :', prop)
+        self.prop_list = prop_list
 
     def run(self):
         """ The actual worker part of the thread. """
         self.oscServer.serve_forever()
 
     def defaultMessageHandler(self, addr, tags, data, client_address):
-        """ Default handler for the OSCServer. """
+        """
+        Default handler for the OSCServer.
+        """
         if debug:
             dbg = 'receveived : {addr} {data} (type={tags}) from {client_address}'
             print(dbg.format(addr=addr, data=data, tags=tags, client_address=client_address))
@@ -46,16 +54,14 @@ class ServerThread(threading.Thread):
                 new = item 
         if len(data) == 1:
             data = data[0]
-        prop_list=[p for p in dir(self.the_class) if isinstance(getattr(self.the_class, p),property)]
-        print new, prop_list
-        if new in prop_list:
-            print 'propery'
-            setattr(self.parent, new)
+        if new in self.prop_list:
+            print('receive OSC -> property', new, data)
+            setattr(self.parent, new, data)
         else:
-            print 'method'
             meth = getattr(self.parent, new)
-            print meth, data
-            meth(data)
+            if debug:
+                print('receive OSC -> method', new)
+            meth()
 
 
 class OSCServer(object):
