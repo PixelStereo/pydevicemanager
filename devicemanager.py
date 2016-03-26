@@ -61,7 +61,10 @@ class ServerThread(threading.Thread):
             meth = getattr(self.parent, new)
             if debug:
                 print('receive OSC -> method', new)
-            meth()
+            if data:
+                meth(data)
+            else:
+                meth()
 
 
 class OSCServer(object):
