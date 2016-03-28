@@ -63,10 +63,12 @@ class ServerThread(threading.Thread):
             meth = getattr(self.parent, new)
             if debug:
                 print('receive OSC -> method', new)
-            if data:
-                meth(data)
-            else:
+            if data == []:
+                # there is no arguments, so it's just a method to call
                 meth()
+            else:
+                # this method has optional arguments, and some are presents. Please forward them
+                meth(data)
 
 
 class OSCServer(object):
