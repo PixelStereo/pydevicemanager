@@ -39,39 +39,39 @@ class ServerThread(threading.Thread):
         """ The actual worker part of the thread. """
         self.oscServer.serve_forever()
 
-    def defaultMessageHandler(self, addr, tags, data, client_address):
+    def defaultMessageHandler(self, address, tags, data, client_address):
         """
         Default handler for the OSCServer.
         """
         if debug:
-            dbg = 'receveived : {addr} {data} (type={tags}) from {client_address}'
-            print(dbg.format(addr=addr, data=data, tags=tags, client_address=client_address))
-        addr = addr.split('/')
-        new = ''
+            dbg = 'receveived : {address} {data} (type={tags}) from {client_address}'
+            print(dbg.format(address=address, data=data, tags=tags, client_address=client_address))
+        addr = address.split('/')
+        prop = ''
         for item in addr:
-            if new != '':
-                new = new + '_' + item
+            if prop != '':
+                prop = prop + '_' + item
             else:
-                new = item 
-        if new in self.prop_list:
+                prop = item 
+        if prop in self.prop_list:
             if isinstance(data, list):
                 if len(data) == 0:
                     # this is a query
-                    answer = getattr(self.parent, new)
-                    self.answer(client_address, addr[0], answer)
+                    answer = getattr(self.parent, prop)
+                    self.answer(client_address, address, answer)
                 else:
                     if len(data) == 1:
                         data = data[0]
                     # this is setter
-                    if debug:
-                        print('receive OSC -> property', new, data)
-                    setattr(self.parent, new, data)
+                    if debug == 4:
+                        print('receive OSC -> property', prop, data)
+                    setattr(self.parent, prop, data)
         else:
             if len(data) == 1:
                 data = data[0]
-            meth = getattr(self.parent, new)
-            if debug:
-                print('receive OSC -> method', new)
+            meth = getattr(self.parent, prop)
+            if debug == 4:
+                print('receive OSC -> method', prop)
             if data == []:
                 # there is no arguments, so it's just a method to call
                 meth()
@@ -79,9 +79,13 @@ class ServerThread(threading.Thread):
                 # this method has optional arguments, and some are presents. Please forward them
                 meth(data)
 
-    def answer(self, client_address, addr, answer):
-        self.client.connect(  ('127.0.0.1',33333)  )
-        msg = OSCMessage(addr)
+    def answer(self, client_address, address, answer):
+        if answer == True:
+            answer = 1
+        if answer == False:
+            answer = 0
+        self.client.connect(  (client_address[0],33333)  )
+        msg = OSCMessage(address)
         msg.append(answer)
         self.client.send(msg)
 
