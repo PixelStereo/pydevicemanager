@@ -5,7 +5,6 @@ import socket
 import select
 from OSC import ThreadingOSCServer, OSCClient , OSCMessage
 #import pybonjour
-client = OSCClient()
 
 debug = True
 
@@ -34,6 +33,7 @@ class ServerThread(threading.Thread):
                     prop = new
                 print('register osc address :', prop)
         self.prop_list = prop_list
+        self.client = OSCClient()
 
     def run(self):
         """ The actual worker part of the thread. """
@@ -53,13 +53,22 @@ class ServerThread(threading.Thread):
                 new = new + '_' + item
             else:
                 new = item 
-        if len(data) == 1:
-            data = data[0]
         if new in self.prop_list:
-            if debug:
-                print('receive OSC -> property', new, data)
-            setattr(self.parent, new, data)
+            if isinstance(data, list):
+                if len(data) == 0:
+                    # this is a query
+                    answer = getattr(self.parent, new)
+                    self.answer(client_address, addr[0], answer)
+                else:
+                    if len(data) == 1:
+                        data = data[0]
+                    # this is setter
+                    if debug:
+                        print('receive OSC -> property', new, data)
+                    setattr(self.parent, new, data)
         else:
+            if len(data) == 1:
+                data = data[0]
             meth = getattr(self.parent, new)
             if debug:
                 print('receive OSC -> method', new)
@@ -70,6 +79,11 @@ class ServerThread(threading.Thread):
                 # this method has optional arguments, and some are presents. Please forward them
                 meth(data)
 
+    def answer(self, client_address, addr, answer):
+        self.client.connect(  ('127.0.0.1',33333)  )
+        msg = OSCMessage(addr)
+        msg.append(answer)
+        self.client.send(msg)
 
 class OSCServer(object):
     """docstring for OSCServer"""
