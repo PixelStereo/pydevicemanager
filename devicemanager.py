@@ -23,8 +23,9 @@ class ServerThread(threading.Thread):
         self.daemon = True
         self.oscServer = ThreadingOSCServer((ip, port))
         self.oscServer.addMsgHandler('default', self.defaultMessageHandler)
+        # make a list of all properties of 'parent'
         prop_list = [p for p in dir(parent.__class__) if isinstance(getattr(parent.__class__, p),property)]
-        if debug:
+        if debug == 4:
             for prop in prop_list:
                 prop = prop.split('_')
                 new = ''
@@ -55,7 +56,8 @@ class ServerThread(threading.Thread):
         if len(data) == 1:
             data = data[0]
         if new in self.prop_list:
-            print('receive OSC -> property', new, data)
+            if debug:
+                print('receive OSC -> property', new, data)
             setattr(self.parent, new, data)
         else:
             meth = getattr(self.parent, new)
@@ -86,7 +88,7 @@ class OSCServer(object):
     
     def register_callback(self,sdRef, flags, errorCode, name, regtype, domain):
         if errorCode == pybonjour.kDNSServiceErr_NoError:
-            print ('Registered zeroconf service' , name , regtype , domain)
+            print('Registered zeroconf service' , name , regtype , domain)
 
     def zeroconf(self):
         hostname = socket.gethostname()
