@@ -25,7 +25,6 @@ class SpecialOscServer(liblo.Server):
                     prop = new
                 print('register osc address :', prop)
         self.prop_list = prop_list
-        self.client = OSCClient()
     
     def defaultMessageHandler(self, address, data, tags, client_address):
         """
@@ -69,18 +68,15 @@ class SpecialOscServer(liblo.Server):
                 meth(data)
 
     def answer(self, client_address, address, answer):
-        print 1
         if answer == True:
             answer = 1
         if answer == False:
             answer = 0
-        #target = liblo.Address(1234)
-        #msg = liblo.Message("/foo/blah")
+        target = liblo.Address(client_address, 33333)
+        msg = liblo.Message(address)
+        msg.add(answer)
+        liblo.send(target, msg)
 
-        self.client.connect(  (client_address,33333)  )
-        msg = OSCMessage(address)
-        msg.append(answer)
-        self.client.send(msg)
 
 class OSCServer(object):
     """docstring for OSCServer"""
