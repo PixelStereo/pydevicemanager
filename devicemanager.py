@@ -107,11 +107,14 @@ class OSCServer(object):
     def getDefaultIPAddress(self):
         #Attempts to resolve an IP address from the current hostname. If not possible, returns 127.0.0.1
         try :
-            ipAddress = socket.gethostbyname(socket.gethostname())
+            #ipAddress = socket.gethostbyname(socket.gethostname())
+	    ipAddress = [l for l in ([ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith("127.")][:1], [[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]]) if l][0][0]
         except :
             ipAddress = '127.0.0.1'
-        print('FORCE TO 127.0.0.2 because BUG')
-        ipAddress = '127.0.0.1'
+            if debug:
+		print('FORCE TO 127.0.0.2 because BUG')
+	if debug:
+		print('ip address :', ipAddress)
         return ipAddress
 
     def getDefaultPort(self):
