@@ -1,21 +1,34 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from liblo import *
 import liblo
+import sys
 
 debug = True
 
-class SpecialOscServer(liblo.Server):
-    """docstring for OSCServer"""
-    def __init__(self, port, parent):
-        super(SpecialOscServer, self).__init__(port)
+
+class OSCServer(object):
+    """
+    This is the class you instanciate to create a server
+    If you specify the word "thread", you will create a thread server
+    r"""
+    def __init__(self, parent, port, name='no-name', threading=False):
+        super(OSCServer, self).__init__()
         self.parent = parent
-        #self.daemon = True
-        self.add_method(None, None, self.defaultMessageHandler)
+        self.port = port
+        self.name = name
+        if threading == False:
+            self.server = liblo.Server(self.getDefaultPort())
+        else:
+            self.server = ServerThread(self.getDefaultPort())
+            self.server.start()
         if debug:
             print('OSC Server started on port %i' % (self.port))
+        # add the default method for catching everything
+        self.server.add_method(None, None, self.defaultMessageHandler)
         # make a list of all properties of 'parent'
-        prop_list = [p for p in dir(parent.__class__) if isinstance(getattr(parent.__class__, p),property)]
+        prop_list = [p for p in dir(parent.__class__) if isinstance(getattr(parent.__class__, p), property)]
         if debug == 4:
             for prop in prop_list:
                 prop = prop.split('_')
@@ -25,7 +38,14 @@ class SpecialOscServer(liblo.Server):
                     prop = new
                 print('register osc address :', prop)
         self.prop_list = prop_list
-    
+
+    def getDefaultPort(self):
+        #Get the default port from the configuration file, or return 10000 if fail.
+        if self.port:
+            return self.port
+        else:
+            return 10000
+
     def defaultMessageHandler(self, address, data, tags, client_address):
         """
         Default handler for the OSCServer.
@@ -76,19 +96,3 @@ class SpecialOscServer(liblo.Server):
         msg = liblo.Message(address)
         msg.add(answer)
         liblo.send(target, msg)
-
-
-class OSCServer(object):
-    """docstring for OSCServer"""
-    def __init__(self, parent, port, name='no-name'):
-        super(OSCServer, self).__init__()
-        self.parent = parent
-        self.port = port
-        self.server = SpecialOscServer(self.getDefaultPort(), parent)
-
-    def getDefaultPort(self):
-        #Get the default port from the configuration file, or return 10000 if fail.
-        if self.port:
-            return self.port
-        else:
-            return 10000
