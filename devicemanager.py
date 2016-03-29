@@ -88,7 +88,7 @@ class OSCServer(object):
                     # this method has optional arguments, and some are presents. Please forward them
                     meth(data)
             except AttributeError:
-                dbg = 'this attribute does not exist : {prop}'
+                dbg = 'ERROR 111 - this attribute does not exist : {prop}'
                 print(dbg.format(prop=prop))
 
     def answer(self, client_address, address, answer):
