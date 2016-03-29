@@ -77,15 +77,19 @@ class OSCServer(object):
         else:
             if len(data) == 1:
                 data = data[0]
-            meth = getattr(self.parent, prop)
-            if debug == 4:
-                print('receive OSC -> method', prop)
-            if data == []:
-                # there is no arguments, so it's just a method to call
-                meth()
-            else:
-                # this method has optional arguments, and some are presents. Please forward them
-                meth(data)
+            try:
+                meth = getattr(self.parent, prop)
+                if debug == 4:
+                    print('receive OSC -> method', prop)
+                if data == []:
+                    # there is no arguments, so it's just a method to call
+                    meth()
+                else:
+                    # this method has optional arguments, and some are presents. Please forward them
+                    meth(data)
+            except AttributeError:
+                dbg = 'this attribute does not exist : {prop}'
+                print(dbg.format(prop=prop))
 
     def answer(self, client_address, address, answer):
         if answer == True:
