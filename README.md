@@ -10,5 +10,5 @@ First, you must install liblo & pyliblo, used for OSC communications
 
 Then, install the last version of the package. Remember it's an alpha version    
 
-    https://github.com/PixelStereo/pydevicemanager/archive/master.zip --upgrade
+    pip install https://github.com/PixelStereo/pydevicemanager/archive/master.zip --upgrade
 
