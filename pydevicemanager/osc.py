@@ -51,52 +51,55 @@ class OSCServer(object):
         Default handler for the OSCServer.
         """
         client_address = client_address.hostname
-        if debug:
-            dbg = 'receveived : {address} {data} (type={tags}) from {client_address}'
-            print(dbg.format(address=address, data=data, tags=tags, client_address=client_address))
-        addr = address.split('/')
-        prop = ''
-        for item in addr:
-            if prop != '':
-                prop = prop + '_' + item
-            else:
-                prop = item 
-        if prop in self.prop_list:
-            if isinstance(data, list):
-                if len(data) == 0:
-                    # this is a query
-                    answer = getattr(self.parent, prop)
-                    self.answer(client_address, address, answer)
-                else:
-                    if len(data) == 1:
-                        data = data[0]
-                    # this is setter
-                    if debug == 4:
-                        print('receive OSC -> property', prop, data)
-                    setattr(self.parent, prop, data)
+        if address == '/ping':
+            self.answer(client_address, '/ping', True, 44444)
         else:
-            if len(data) == 1:
-                data = data[0]
-            try:
-                meth = getattr(self.parent, prop)
-                if debug == 4:
-                    print('receive OSC -> method', prop)
-                if data == []:
-                    # there is no arguments, so it's just a method to call
-                    meth()
+            if debug:
+                dbg = 'receveived : {address} {data} (type={tags}) from {client_address}'
+                print(dbg.format(address=address, data=data, tags=tags, client_address=client_address))
+            addr = address.split('/')
+            prop = ''
+            for item in addr:
+                if prop != '':
+                    prop = prop + '_' + item
                 else:
-                    # this method has optional arguments, and some are presents. Please forward them
-                    meth(data)
-            except AttributeError:
-                dbg = 'ERROR 111 - Invalid Method : {prop}'
-                print(dbg.format(prop=prop))
+                    prop = item 
+            if prop in self.prop_list:
+                if isinstance(data, list):
+                    if len(data) == 0:
+                        # this is a query
+                        answer = getattr(self.parent, prop)
+                        self.answer(client_address, address, answer)
+                    else:
+                        if len(data) == 1:
+                            data = data[0]
+                        # this is setter
+                        if debug == 4:
+                            print('receive OSC -> property', prop, data)
+                        setattr(self.parent, prop, data)
+            else:
+                if len(data) == 1:
+                    data = data[0]
+                try:
+                    meth = getattr(self.parent, prop)
+                    if debug == 4:
+                        print('receive OSC -> method', prop)
+                    if data == []:
+                        # there is no arguments, so it's just a method to call
+                        meth()
+                    else:
+                        # this method has optional arguments, and some are presents. Please forward them
+                        meth(data)
+                except AttributeError:
+                    dbg = 'ERROR 111 - Invalid Method : {prop}'
+                    print(dbg.format(prop=prop))
 
-    def answer(self, client_address, address, answer):
+    def answer(self, client_address, address, answer, port=33333):
         if answer == True:
             answer = 1
         if answer == False:
             answer = 0
-        target = liblo.Address(client_address, 33333)
+        target = liblo.Address(client_address, port)
         msg = liblo.Message(address)
         msg.add(answer)
         liblo.send(target, msg)
