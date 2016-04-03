@@ -1,0 +1,3 @@
+[submodule "3rdparty/pyslip"]
+	path = 3rdparty/pyslip
+	url = https://github.com/reduzent/pyslip.git
