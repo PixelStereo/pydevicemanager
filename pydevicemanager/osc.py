@@ -29,14 +29,14 @@ class OSCServer(object):
         self.server.add_method(None, None, self.defaultMessageHandler)
         # make a list of all properties of 'parent'
         prop_list = [p for p in dir(parent.__class__) if isinstance(getattr(parent.__class__, p), property)]
-        if debug == 4:
+        if debug == 1:
             for prop in prop_list:
                 prop = prop.split('_')
                 new = ''
                 for item in prop:
                     new = new + '/'  + item
                     prop = new
-                print('register osc address :', prop)
+                print('register osc address :' + str(prop))
         self.prop_list = prop_list
 
     def getDefaultPort(self):
